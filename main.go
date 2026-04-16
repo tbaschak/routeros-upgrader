@@ -41,6 +41,7 @@ type RosParams struct {
 	Address         string
 	User            string
 	Password        string
+	Branch          string
 	Pkgs            []rosapi.RosPkg
 	Arch            string
 	MajorVersion    int
@@ -75,11 +76,19 @@ func run() error {
 	extpkgsS := flag.String("extpkgs", "", "install additional packages")
 	prversion := flag.Bool("v", false, "print version")
 	flag.Parse()
+	branchSet := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "b" {
+			branchSet = true
+		}
+	})
 	if *prversion {
 		return printVersion()
 	}
 	rts, err := parseConfig(
 		*cpath,
+		*branch,
+		branchSet,
 		splitparamlist(*tags),
 		splitparamlist(*limit),
 		splitparamlist(*extpkgsS),
@@ -109,7 +118,7 @@ func run() error {
 		return fmt.Errorf("failed fetching package info: %w", err)
 	}
 	rts = injectExtpkgs(rts)
-	pkgupdrts, fwupdrts := planUpgrades(rts, *tver, *branch, *noupdfw)
+	pkgupdrts, fwupdrts := planUpgrades(rts, *tver, *noupdfw)
 	if len(pkgupdrts) == 0 && len(fwupdrts) == 0 {
 		log.Println("no action required - exiting")
 		for _, v := range rts {
@@ -151,11 +160,12 @@ type ConfRouter struct {
 	Address  string   `yaml:"address"`
 	User     string   `yaml:"user"`
 	Password string   `yaml:"password"`
+	Branch   string   `yaml:"branch"`
 	Powerdep string   `yaml:"powerdep"`
 	Extpkgs  []string `yaml:"extpkgs"`
 }
 
-func parseConfig(path string, tags, limit, extpkgs []string) ([]RosParams, error) {
+func parseConfig(path string, branch string, branchSet bool, tags, limit, extpkgs []string) ([]RosParams, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -180,6 +190,9 @@ func parseConfig(path string, tags, limit, extpkgs []string) ([]RosParams, error
 		if len(extpkgs) != 0 {
 			r.Extpkgs = extpkgs
 		}
+		if len(r.Branch) == 0 || branchSet {
+			r.Branch = branch
+		}
 		if !strings.Contains(r.Address, ":") {
 			r.Address = fmt.Sprintf("%s:%d", r.Address, defaultSSHPort)
 		}
@@ -188,6 +201,7 @@ func parseConfig(path string, tags, limit, extpkgs []string) ([]RosParams, error
 			Address:  r.Address,
 			User:     r.User,
 			Password: r.Password,
+			Branch:   r.Branch,
 			Powerdep: r.Powerdep,
 			Extpkgs:  r.Extpkgs,
 		})
@@ -232,7 +246,7 @@ func connectRouters(rts []RosParams) error {
 	return wg.Wait()
 }
 
-func planUpgrades(rts []RosParams, tver, branch string, noupdfw bool) (pkgupdrts, fwupdrts []RosParams) {
+func planUpgrades(rts []RosParams, tver string, noupdfw bool) (pkgupdrts, fwupdrts []RosParams) {
 	pkgupdrts = make([]RosParams, 0)
 	fwupdrts = make([]RosParams, 0)
 	for _, rt := range rts {
@@ -243,7 +257,7 @@ func planUpgrades(rts []RosParams, tver, branch string, noupdfw bool) (pkgupdrts
 			)
 			continue
 		}
-		lver, err := resolveTargetVersion(tver, branch, rt.MajorVersion)
+		lver, err := resolveTargetVersion(tver, rt.Branch, rt.MajorVersion)
 		if err != nil {
 			color.Red(
 				"|ERR> %s: unknown target version\n", rt.Name,

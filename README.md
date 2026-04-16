@@ -22,6 +22,7 @@ routers:
     name: router1 # name to be shown in the app (optional, default: address)
     user: dieter # username to use (optional, default: admin)
     password: admin # password to use (required)
+    branch: long-term # release branch for this router (optional, default: stable)
     tag: failover # tag to filter with the -t parameter (optional)
   - address: rtr.example.com
     user: dieter
@@ -60,6 +61,13 @@ Usage of routeros-upgrader:
   -v    print version
   -y    force yes
 ```
+
+### Branch selection (`branch`)
+
+You can set the RouterOS release branch per router in yaml using `branch`.
+If omitted, it defaults to `stable`.
+
+The CLI parameter `-b` applies globally and overrides `branch` values from yaml when it is explicitly set.
 
 ## Special Cases
 

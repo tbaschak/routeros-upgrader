@@ -3,6 +3,7 @@ routers:
     name: router1 # name to be shown in the app (optional, default: address)
     user: dieter # username to use (optional, default: admin)
     password: admin # password to use (required)
+    branch: long-term # release branch for this router (optional, default: stable)
     tag: failover # tag to filter with the -t parameter (optional)
   - address: rtr.example.com
     user: dieter
