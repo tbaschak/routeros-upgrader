@@ -64,7 +64,7 @@ func main() {
 func run() error {
 	// Config
 	tver := flag.String("tgt", "latest", "target package version")
-	branch := flag.String("b", "stable", "set branch (stable, testing, ..)")
+	branch := flag.String("b", "stable", "set branch (stable, long-term,testing, ..)")
 	noupdfw := flag.Bool("nofw", false, "dont upgrade routerboard firmware")
 	cpath := flag.String("c", "routers.yml", "config path")
 	tags := flag.String("t", "", "filter tags")

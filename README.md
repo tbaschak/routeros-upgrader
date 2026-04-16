@@ -41,7 +41,7 @@ Run the tool!
 ```shell
 Usage of routeros-upgrader:
   -b string
-        set branch (stable, testing, ..) (default "stable")
+        set branch (stable, long-term, testing, ..) (default "stable")
   -c string
         config path (default "routers.yml")
   -d string
