@@ -54,6 +54,8 @@ Usage of routeros-upgrader:
   -n    force no
   -nofw
         dont upgrade routerboard firmware
+  -sha256
+        verify package SHA-256 checksums before upload
   -t string
         filter tags
   -tgt string
@@ -68,6 +70,12 @@ You can set the RouterOS release branch per router in yaml using `branch`.
 If omitted, it defaults to `stable`.
 
 The CLI parameter `-b` applies globally and overrides `branch` values from yaml when it is explicitly set.
+
+### Package checksums (`-sha256`)
+
+Use `-sha256` to check every package selected for upload before uploading any package. For each `.npk`, the tool uses a matching `.npk.sha256` file in the working directory if present; otherwise it downloads the checksum from MikroTik. Packages are also read from the working directory when available. A missing or invalid checksum, or a checksum mismatch, stops the upgrade. Local files are left in place for inspection. This option is off by default.
+
+Local checksum files are trusted as the expected values. Keep them with the packages they describe; the tool does not authenticate locally supplied checksums.
 
 ## Special Cases
 

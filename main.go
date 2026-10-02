@@ -74,6 +74,7 @@ func run() error {
 	forceno := flag.Bool("n", false, "force no")
 	delaysecs := flag.String("d", "10", "reboot delay in seconds or in time.ParseDuration")
 	extpkgsS := flag.String("extpkgs", "", "install additional packages")
+	verifySHA256 := flag.Bool("sha256", false, "verify package SHA-256 checksums before upload")
 	prversion := flag.Bool("v", false, "print version")
 	flag.Parse()
 	branchSet := false
@@ -136,7 +137,7 @@ func run() error {
 	}
 
 	// Upgrade
-	if err := uploadPackages(pkgupdrts); err != nil {
+	if err := uploadPackages(pkgupdrts, *verifySHA256); err != nil {
 		return err
 	}
 	if err := upgradeFirmware(fwupdrts); err != nil {
@@ -366,7 +367,18 @@ func rebootRouters(rts []RosParams, delay uint) error {
 	return wg.Wait()
 }
 
-func uploadPackages(rts []RosParams) error {
+func uploadPackages(rts []RosParams, verifySHA256 bool) error {
+	if verifySHA256 {
+		for _, rt := range rts {
+			for _, p := range rt.Pkgs {
+				if _, err := rospkg.GetPackage(rospkg.PkgID{
+					Name: p.Name, Version: p.VersionTarget, Architecture: rt.Arch,
+				}, true); err != nil {
+					return fmt.Errorf("package verification for %s failed: %w", rt.Name, err)
+				}
+			}
+		}
+	}
 	wg := new(errgroup.Group)
 	for _, frt := range rts {
 		rt := frt
@@ -381,7 +393,7 @@ func uploadPackages(rts []RosParams) error {
 					Name:         p.Name,
 					Version:      p.VersionTarget,
 					Architecture: rt.Arch,
-				})
+				}, verifySHA256)
 				if err != nil {
 					return err
 				}
